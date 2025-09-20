@@ -38,15 +38,19 @@ function Dashboard() {
   if (!user) return <div className="text-white p-6">Loading...</div>;
 
   switch (user.role) {
-    case "student":
-      return <StudentDashboard user={user} fetchWithAuth={fetchWithAuth} />;
-    case "teacher":
-      return <TeacherDashboard user={user} fetchWithAuth={fetchWithAuth} />;
-    case "hod":
-      return <HodDashboard user={user} fetchWithAuth={fetchWithAuth} />;
-    default:
-      return <div className="text-white p-6">Unknown role</div>;
-  }
+  case "Student":
+    return <StudentDashboard user={user} fetchWithAuth={fetchWithAuth} />;
+  case "Teacher":
+    return <TeacherDashboard user={user} fetchWithAuth={fetchWithAuth} />;
+  case "HOD":
+    return <HodDashboard user={user} fetchWithAuth={fetchWithAuth} />;
+  default:
+    return (
+      <div className="text-white p-6">
+        Unknown role: {user.role}
+      </div>
+    );
+}
 }
 
 export default Dashboard;

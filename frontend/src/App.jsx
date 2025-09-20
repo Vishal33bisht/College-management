@@ -2,19 +2,20 @@ import { useState } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import { FiMail, FiLock, FiBox } from "react-icons/fi";
 import Dashboard from "./Dashboard";
-
+import ProtectedRoute from './components/ProtectedRoute';
 
 // --- Register Component ---
 function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student");
+  const [role, setRole] = useState("Student");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setMessage("");
     try {
       const res = await fetch("http://127.0.0.1:8000/register", {
         method: "POST",
@@ -23,7 +24,7 @@ function Register() {
       });
 
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         throw new Error(err.detail || "Registration failed");
       }
 
@@ -72,9 +73,11 @@ function Register() {
           onChange={(e) => setRole(e.target.value)}
           className="w-full mb-3 p-3 rounded bg-[#3c3c3c]"
         >
-          <option value="student">Student</option>
-          <option value="teacher">Teacher</option>
-          <option value="hod">HOD</option>
+          <option value="Student">Student</option>
+          <option value="Teacher">Teacher</option>
+          <option value="HOD">HOD</option>
+          <option value="Admin">Admin</option>
+          <option value="TA">TA</option>
         </select>
 
         <button
@@ -92,16 +95,16 @@ function Register() {
   );
 }
 
-
 // --- Login Component ---
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student");
+  const [role, setRole] = useState("Student"); // ✅ match backend casing
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async () => {
+    setMessage("");
     try {
       const response = await fetch("http://127.0.0.1:8000/token", {
         method: "POST",
@@ -109,7 +112,6 @@ function Login() {
         body: new URLSearchParams({
           username: email,
           password: password,
-          role: role,
         }),
       });
 
@@ -120,12 +122,12 @@ function Login() {
 
       const data = await response.json();
       localStorage.setItem("token", data.access_token);
-      localStorage.setItem("role", role);
+      localStorage.setItem("role", role); // ✅ store role in correct casing
       setMessage("✅ Login successful!");
       navigate("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
-      setMessage("❌ Invalid credentials or role");
+      setMessage("❌ " + error.message);
     }
   };
 
@@ -177,9 +179,9 @@ function Login() {
               onChange={(e) => setRole(e.target.value)}
               className="w-full rounded-lg border border-gray-600 bg-[#3c3c3c] py-3 px-4 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#34D399]"
             >
-              <option value="student">Student</option>
-              <option value="teacher">Teacher</option>
-              <option value="hod">HOD</option>
+              <option value="Student">Student</option>
+              <option value="Teacher">Teacher</option>
+              <option value="HOD">HOD</option>
             </select>
           </div>
 
@@ -211,7 +213,6 @@ function Login() {
   );
 }
 
-
 // --- App Root ---
 function App() {
   return (
@@ -219,7 +220,14 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['Student', 'Teacher', 'HOD']}>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
