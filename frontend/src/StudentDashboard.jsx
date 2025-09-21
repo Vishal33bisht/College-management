@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-
 function StudentDashboard({ user, fetchWithAuth }) {
   const [courses, setCourses] = useState([]);
   const [attendance, setAttendance] = useState([]);
@@ -8,25 +7,18 @@ function StudentDashboard({ user, fetchWithAuth }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("courses");
-  const [myCourses, setMyCourses] = useState([]);
-const [message, setMessage] = useState("");
-
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [c, a, g,mc] = await Promise.all([
+        const [c, a, g] = await Promise.all([
           fetchWithAuth("http://127.0.0.1:8000/courses"),
           fetchWithAuth("http://127.0.0.1:8000/attendance/me"),
           fetchWithAuth("http://127.0.0.1:8000/grades/me"),
-          fetchWithAuth("http://127.0.0.1:8000/enrollments/me"),
         ]);
-         console.log("Courses API response:", c);  
-      console.log("Enrollments API response:", mc);
         setCourses(c || []);
         setAttendance(a || []);
         setGrades(g || []);
-        setMyCourses(mc || []);
       } catch (err) {
         setError("❌ Failed to load dashboard data.");
       } finally {
@@ -40,24 +32,7 @@ const [message, setMessage] = useState("");
     localStorage.clear();
     window.location.href = "/";
   };
-const handleEnroll = async (courseId) => {
-  try {
-    const res = await fetchWithAuth(
-      `http://127.0.0.1:8000/enrollments/${courseId}`,
-      { method: "POST" }
-    );
-    if (res.msg) {
-      setMessage("✅ " + res.msg);
-      // refresh my courses
-      const mc = await fetchWithAuth("http://127.0.0.1:8000/enrollments/me");
-      setMyCourses(mc || []);
-    }
-  } catch (err) {
-    setMessage("❌ Failed to enroll in course");
-  }
-};
 
-  // Quick stats
   const attendancePercent =
     attendance.length > 0
       ? Math.round(
@@ -100,11 +75,7 @@ const handleEnroll = async (courseId) => {
           Logout
         </button>
       </div>
-{message && (
-  <div className="mb-4 p-3 rounded bg-[#2a2a2a] text-green-400">
-    {message}
-  </div>
-)}
+
       {/* Quick Stats */}
       {!loading && !error && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -125,7 +96,7 @@ const handleEnroll = async (courseId) => {
 
       {/* Tabs */}
       <div className="flex gap-4 mb-6">
-        {["courses", "mycourses", "attendance", "grades"].map((tab) => (
+        {["courses", "attendance", "grades"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -151,36 +122,19 @@ const handleEnroll = async (courseId) => {
               <h2 className="text-xl font-semibold mb-3">📘 Courses</h2>
               <table className="w-full text-left border-collapse">
                 <thead>
-  <tr className="bg-[#2a2a2a]">
-    <th className="p-3">Course</th>
-    <th className="p-3">Teacher</th>
-    <th className="p-3">Action</th>
-  </tr>
-</thead>
-<tbody>
-  {courses.map((c) => {
-    const alreadyEnrolled = myCourses.some((mc) => mc.id === c.id);
-    return (
-      <tr key={c.id} className="border-b border-gray-700">
-        <td className="p-3">{c.name}</td>
-        <td className="p-3">{c.teacher?.name}</td>
-        <td className="p-3">
-          <button
-            onClick={() => handleEnroll(c.id)}
-            disabled={alreadyEnrolled}
-            className={`px-3 py-1 rounded ${
-              alreadyEnrolled
-                ? "bg-gray-600 cursor-not-allowed"
-                : "bg-green-500 hover:bg-green-400"
-            }`}
-          >
-            {alreadyEnrolled ? "Enrolled" : "Enroll"}
-          </button>
-        </td>
-      </tr>
-    );
-  })}
-</tbody>
+                  <tr className="bg-[#2a2a2a]">
+                    <th className="p-3">Course</th>
+                    <th className="p-3">Teacher</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {courses.map((c) => (
+                    <tr key={c.id} className="border-b border-gray-700">
+                      <td className="p-3">{c.name}</td>
+                      <td className="p-3">{c.teacher?.name}</td>
+                    </tr>
+                  ))}
+                </tbody>
               </table>
             </>
           )}
@@ -230,19 +184,6 @@ const handleEnroll = async (courseId) => {
               </table>
             </>
           )}
-
-        {activeTab === "mycourses" && (
-  <>
-    <h2 className="text-xl font-semibold mb-3">📚 My Courses</h2>
-    <ul className="space-y-2">
-      {myCourses.map((c) => (
-        <li key={c.id} className="bg-[#2a2a2a] p-3 rounded">
-          {c.name} — {c.teacher?.name}
-        </li>
-      ))}
-    </ul>
-  </>
-)}
         </div>
       )}
     </div>
